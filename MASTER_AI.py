@@ -432,11 +432,15 @@ HTML = """<!doctype html>
             <div class="field"><label class="lab">Özellikler</label><div id="specs"></div>
               <button class="btn ghost small" style="margin-top:4px" onclick="addSpec('','')">+ özellik ekle</button>
             </div>
-            <div class="toolbar">
-              <select id="tone" style="width:auto;flex:0 0 auto">
-                <option>satış odaklı</option><option>sade ve net</option><option>lüks / premium</option><option>samimi</option>
-              </select>
-              <button class="btn teal small" id="rewriteBtn" onclick="aiRewrite()">✦ Başlık & açıklamayı yeniden yaz</button>
+            <div class="toolbar" style="flex-direction:column;align-items:stretch;gap:10px">
+              <button class="btn primary" id="listingBtn" onclick="aiListing()" style="justify-content:center;font-size:15px">✦ Profesyonel listeleme oluştur</button>
+              <div style="font-size:11.5px;color:var(--mute);line-height:1.5">Açıklama + fayda maddeleri + nasıl kullanılır + özellik tablosu + güven bölümü (garanti / kargo / iade) + SSS — hepsi tek tuşla, ürüne özel üretilir.</div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:2px">
+                <select id="tone" style="width:auto;flex:0 0 auto">
+                  <option>satış odaklı</option><option>sade ve net</option><option>lüks / premium</option><option>samimi</option>
+                </select>
+                <button class="btn teal small" id="rewriteBtn" onclick="aiRewrite()">Sadece başlık & açıklamayı yeniden yaz</button>
+              </div>
             </div>
           </div>
 
@@ -505,6 +509,10 @@ HTML = """<!doctype html>
           <div class="note"><b>Not:</b> Açıklama ve görseller telif taşıyabilir. Yayından önce metni "yeniden yaz" ile özgünleştir; görselleri kendi fotoğraflarınla değiştir.</div>
         </div>
       </div>
+      <div id="proWrap" style="display:none;margin-top:18px">
+        <div class="plabel">Profesyonel sayfa önizlemesi — Shopify'da böyle görünecek</div>
+        <div id="proPreview" style="background:#fff;color:#111;border-radius:12px;padding:22px;max-height:560px;overflow:auto"></div>
+      </div>
     </section>
 
     <!-- STEP 3 -->
@@ -533,6 +541,16 @@ HTML = """<!doctype html>
     <div class="row"><button class="btn ghost small" onclick="testShopify()">Bağlantıyı test et</button><span class="testline" id="testline"></span></div>
     <div class="field" style="margin-top:16px"><label class="lab">Anthropic API anahtarı (AI düzenleme için)</label><input id="c_key" placeholder="sk-ant-..." type="password"></div>
     <div class="field"><label class="lab">Model</label><input id="c_model" placeholder="claude-sonnet-5"></div>
+    <div style="border-top:1px solid var(--line2);margin:14px 0 8px;padding-top:14px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--cyan)">Güven bilgileri (profesyonel listelemede kullanılır)</div>
+    <div class="field"><label class="lab">Mağaza adı</label><input id="c_store_name" placeholder="MASTER AI Store"></div>
+    <div class="grid2">
+      <div class="field"><label class="lab">Garanti</label><input id="c_guarantee" placeholder="Kalite garantisi"></div>
+      <div class="field"><label class="lab">Kargo</label><input id="c_shipping" placeholder="2-4 iş günü kargo"></div>
+    </div>
+    <div class="grid2">
+      <div class="field"><label class="lab">İade</label><input id="c_returns" placeholder="14 gün kolay iade"></div>
+      <div class="field"><label class="lab">Ödeme</label><input id="c_payment" placeholder="SSL güvenli ödeme"></div>
+    </div>
     <div class="foot">
       <a class="link" href="https://dev.shopify.com" target="_blank">Shopify token nasıl alınır? →</a>
       <div class="row">
@@ -547,7 +565,7 @@ HTML = """<!doctype html>
 
 <script>
 const $=id=>document.getElementById(id);
-let P={title:"",price:"",currency:"TRY",description:"",images:[],vendor:"",sku:"",tags:[],specs:[],seo:{}};
+let P={title:"",price:"",currency:"TRY",description:"",images:[],vendor:"",sku:"",tags:[],specs:[],seo:{},body_html:""};
 let pubStatus="draft";
 function toast(m){const t=$("toast");t.textContent=m;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),2300);}
 function stat(m,e){const s=$("status");s.className="statusline"+(e?" err":"");s.innerHTML=m;}
@@ -562,12 +580,17 @@ async function loadConfig(){
     $("chipShop").className="chip "+(c.shopify_ready?"on":"off");
     $("chipAI").className="chip "+(c.ai_ready?"on":"off");
     $("c_store").value=c.shopify_store||"";$("c_model").value=c.model||"claude-sonnet-5";
+    $("c_store_name").value=c.store_name||"";$("c_guarantee").value=c.trust_guarantee||"";
+    $("c_shipping").value=c.trust_shipping||"";$("c_returns").value=c.trust_returns||"";
+    $("c_payment").value=c.trust_payment||"";
   }catch(e){}
 }
 function openSettings(){$("overlay").classList.add("on");}
 function closeSettings(){$("overlay").classList.remove("on");}
 async function saveSettings(){
-  const body={shopify_store:$("c_store").value,model:$("c_model").value};
+  const body={shopify_store:$("c_store").value,model:$("c_model").value,
+    store_name:$("c_store_name").value,trust_guarantee:$("c_guarantee").value,
+    trust_shipping:$("c_shipping").value,trust_returns:$("c_returns").value,trust_payment:$("c_payment").value};
   if($("c_token").value)body.shopify_token=$("c_token").value;
   if($("c_key").value)body.anthropic_key=$("c_key").value;
   await fetch("/api/settings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
@@ -596,7 +619,8 @@ async function doFetch(){
     if(!r.ok){stat("✗ "+(d.error||"Çekilemedi"),true);return;}
     P={title:d.title||"",price:d.price||"",currency:d.currency||"TRY",description:d.description||"",
        images:(d.images||[]).map(s=>({src:s,use:true})),vendor:d.vendor||"",sku:d.sku||"",
-       tags:d.tags||[],specs:d.specs||[],seo:{}};
+       tags:d.tags||[],specs:d.specs||[],seo:{},body_html:""};
+    $("proWrap").style.display="none";$("proPreview").innerHTML="";
     fill();$("workspace").classList.add("on");
     stat("Ürün hazır. Aşağıda düzenleyip mağazana gönder.");
     $("workspace").scrollIntoView({behavior:"smooth",block:"start"});
@@ -711,12 +735,26 @@ async function aiSeo(){
     collectSeo();toast("SEO üretildi ✓");}
   catch(e){toast(e.message);}finally{b.disabled=false;b.textContent="✦ SEO üret";}
 }
+async function aiListing(){
+  collect();
+  const b=$("listingBtn");b.disabled=true;b.textContent="✦ oluşturuluyor… (biraz sürebilir)";
+  try{
+    const d=await ai("listing",{tone:$("tone").value,lang:"Türkçe",specs:P.specs,vendor:P.vendor,price:P.price,currency:P.currency});
+    if(d.body_html){P.body_html=d.body_html;$("proPreview").innerHTML=d.body_html;$("proWrap").style.display="block";}
+    if(d.seo_title)$("s_title").value=d.seo_title;
+    if(d.meta_description)$("s_meta").value=d.meta_description;
+    if(d.tags)$("s_tags").value=(d.tags||[]).join(", ");
+    collectSeo();toast("Profesyonel listeleme hazır ✓");
+    $("proWrap").scrollIntoView({behavior:"smooth",block:"nearest"});
+  }catch(e){toast(e.message);}
+  finally{b.disabled=false;b.textContent="✦ Profesyonel listeleme oluştur";}
+}
 
 /* ---- push ---- */
 function setPubStatus(v,el){pubStatus=v;document.querySelectorAll("#statusSeg button").forEach(x=>x.classList.remove("on"));el.classList.add("on");}
 async function doPush(){
   collect();collectSeo();
-  const out={title:P.title,description:P.description,price:P.price,vendor:P.vendor,sku:P.sku,
+  const out={title:P.title,description:P.description,body_html:P.body_html||"",price:P.price,vendor:P.vendor,sku:P.sku,
     tags:P.tags,status:pubStatus,inventory:$("f_inv").value,seo:P.seo,
     images:P.images.filter(x=>x.use).map(x=>x.src)};
   if(!out.title)return toast("Başlık boş olamaz");
@@ -972,11 +1010,48 @@ AI_TASKS = {
 def api_ai():
     body = request.json or {}
     task = body.get("task")
+    cfg = load_config()
+    lang = body.get("lang", "Türkçe")
+
+    # --- Profesyonel, güven veren tam ürün sayfası üret ---
+    if task == "listing":
+        store = cfg.get("store_name") or "mağazamız"
+        guarantee = cfg.get("trust_guarantee") or "Kalite garantisi"
+        shipping = cfg.get("trust_shipping") or "Hızlı ve takipli kargo"
+        returns = cfg.get("trust_returns") or "14 gün içinde kolay iade"
+        payment = cfg.get("trust_payment") or "SSL ile güvenli ödeme"
+        system = (
+            "Sen üst düzey bir e-ticaret ürün sayfası editörüsün. Verilen ham ürün bilgisinden GÜVEN VEREN, "
+            "PROFESYONEL bir Shopify ürün açıklaması üret. Çıktı, HER temada düzgün görünecek biçimde SADECE "
+            "satır-içi (inline style) stilli TEMİZ HTML olsun; harici CSS veya <script> KULLANMA. "
+            "Şu bölümleri sırayla üret: "
+            "(1) 2-3 cümlelik dikkat çekici giriş; "
+            "(2) 'Öne Çıkan Faydalar' başlıklı 4-6 maddelik liste; "
+            "(3) 'Nasıl Kullanılır' 3-4 kısa adım; "
+            "(4) 'Ürün Özellikleri' iki sütunlu bir tablo; "
+            "(5) bir GÜVEN ŞERİDİ: yan yana 4 kutu — "
+            f"🛡️ Garanti: {guarantee} · 🚚 Kargo: {shipping} · ↩️ İade: {returns} · 🔒 {payment}; "
+            "(6) 'Sıkça Sorulan Sorular' başlığı altında 5 adet soru-cevap. "
+            "Yazı dili: " + lang + ". Marka: " + store + ". "
+            "Renkleri sade ve şık tut (koyu metin, ince gri çizgiler, yumuşak arka plan kutuları). "
+            "ABARTMA: sağlık, kesin sonuç veya yanıltıcı vaat verme. "
+            'SADECE şu JSON formatında yanıt ver, başka hiçbir metin yazma: '
+            '{"body_html":"...","seo_title":"(max 60 karakter)","meta_description":"(max 155 karakter)","tags":["5-8 etiket"]}'
+        )
+        product = {
+            "title": body.get("title", ""), "description": body.get("description", ""),
+            "specs": body.get("specs", []), "vendor": body.get("vendor", ""),
+            "price": body.get("price", ""), "currency": body.get("currency", "TRY"),
+        }
+        try:
+            out = call_claude(cfg, system, json.dumps(product, ensure_ascii=False), max_tokens=3800)
+            return jsonify(parse_json_block(out))
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
     if task not in AI_TASKS:
         return jsonify({"error": "Bilinmeyen görev."}), 400
-    cfg = load_config()
     tone = body.get("tone", "satış odaklı")
-    lang = body.get("lang", "Türkçe")
     system = AI_TASKS[task].format(tone=tone, lang=lang)
     payload = json.dumps({"title": body.get("title", ""),
                           "description": body.get("description", "")}, ensure_ascii=False)
@@ -1020,9 +1095,10 @@ def api_push():
         except Exception:
             pass
 
+    body_html = product.get("body_html") or desc_html(product)
     payload = {"product": {
         "title": product.get("title") or "Adsız ürün",
-        "body_html": desc_html(product),
+        "body_html": body_html,
         "vendor": product.get("vendor", ""),
         "tags": ", ".join(product.get("tags", [])),
         "status": "active" if product.get("status") == "active" else "draft",
@@ -1072,6 +1148,11 @@ def api_config():
         "ai_ready": bool(cfg.get("anthropic_key")),
         "shopify_store": cfg.get("shopify_store", ""),
         "model": cfg.get("model", DEFAULT_MODEL),
+        "store_name": cfg.get("store_name", ""),
+        "trust_guarantee": cfg.get("trust_guarantee", ""),
+        "trust_shipping": cfg.get("trust_shipping", ""),
+        "trust_returns": cfg.get("trust_returns", ""),
+        "trust_payment": cfg.get("trust_payment", ""),
     })
 
 
@@ -1079,7 +1160,8 @@ def api_config():
 def api_settings():
     data = request.json or {}
     cfg = load_config()
-    for k in ["shopify_store", "shopify_token", "anthropic_key", "model"]:
+    for k in ["shopify_store", "shopify_token", "anthropic_key", "model",
+              "store_name", "trust_guarantee", "trust_shipping", "trust_returns", "trust_payment"]:
         if k in data and str(data[k]).strip() != "":
             cfg[k] = str(data[k]).strip()
         elif data.get(k) == "__CLEAR__":
