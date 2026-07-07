@@ -446,27 +446,39 @@ HTML = """<!doctype html>
 
           <!-- PRICE -->
           <div class="pane" id="pane-price">
+            <div style="font-size:12px;color:var(--mute);margin-bottom:12px;line-height:1.55">Tüm gerçek maliyetleri gir; araç kâr edeceğin <b style="color:var(--cyan)">önerilen satış fiyatını</b> hesaplar. Varsayılanlar Türkiye/Shopify için makul başlangıçtır — kendi rakamlarınla değiştir.</div>
+            <div class="plabel" style="margin:2px 0 8px">Maliyetler</div>
             <div class="grid2">
-              <div class="field"><label class="lab">Kaynak / alış fiyatı</label><input id="p_cost" oninput="calc()"></div>
-              <div class="field"><label class="lab">Kaynak para birimi</label>
-                <select id="p_srccur" onchange="calc()"><option>TRY</option><option>USD</option><option>EUR</option><option>GBP</option></select></div>
+              <div class="field"><label class="lab">Ürün maliyeti (alış)</label><input id="p_cost" oninput="calc()"></div>
+              <div class="field"><label class="lab">Para birimi</label><select id="p_srccur" onchange="calc()"><option>TRY</option><option>USD</option><option>EUR</option><option>GBP</option></select></div>
             </div>
             <div class="grid2">
-              <div class="field"><label class="lab">Kur (TRY'ye çevir, 1 birim =)</label><input id="p_fx" value="1" oninput="calc()"></div>
-              <div class="field"><label class="lab">Kâr marjı %</label><input id="p_margin" value="40" oninput="calc()"></div>
+              <div class="field"><label class="lab">Kur (1 birim = ₺)</label><input id="p_fx" value="1" oninput="calc()"></div>
+              <div class="field"><label class="lab">Kargo maliyeti (₺)</label><input id="p_ship" value="0" oninput="calc()"></div>
+            </div>
+            <div class="plabel" style="margin:14px 0 8px">Kesintiler (satış fiyatının %\'si)</div>
+            <div class="grid2">
+              <div class="field"><label class="lab">Ödeme komisyonu %</label><input id="p_pay" value="5" oninput="calc()"></div>
+              <div class="field"><label class="lab">Platform / işlem %</label><input id="p_platform" value="2" oninput="calc()"></div>
             </div>
             <div class="grid2">
-              <div class="field"><label class="lab">Sabit ekleme (₺)</label><input id="p_add" value="0" oninput="calc()"></div>
-              <div class="field"><label class="lab">Yuvarlama</label>
-                <select id="p_round" onchange="calc()"><option value="none">yok</option><option value="90">…,90</option><option value="99">…,99</option><option value="int">tam sayı</option></select></div>
+              <div class="field"><label class="lab">Reklam payı %</label><input id="p_ad" value="25" oninput="calc()"></div>
+              <div class="field"><label class="lab">İade / kayıp payı %</label><input id="p_return" value="4" oninput="calc()"></div>
             </div>
+            <div class="grid2">
+              <div class="field"><label class="lab">KDV %</label><input id="p_vat" value="20" oninput="calc()"></div>
+              <div class="field"><label class="lab">Hedef net kâr %</label><input id="p_margin" value="20" oninput="calc()"></div>
+            </div>
+            <label class="lab" style="display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font-size:12.5px;color:var(--ink)"><input type="checkbox" id="p_vatinc" checked onchange="calc()" style="width:auto"> Fiyata KDV dahil (Türkiye standardı)</label>
             <div class="calc">
-              <div class="flabel">Mağazadaki satış fiyatı</div>
+              <div class="flabel">Önerilen satış fiyatı</div>
               <div class="final" id="p_final">—</div>
-              <div class="row" style="margin-top:10px">
-                <button class="btn primary small" onclick="applyPrice()">Bu fiyatı uygula</button>
-                <span class="imghint" id="p_break"></span>
+              <div id="p_breakdown" style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--mute);margin-top:10px;line-height:1.75"></div>
+              <div class="grid2" style="margin-top:12px">
+                <div class="field" style="margin:0"><label class="lab">Karşılaştırma çarpanı</label><input id="p_compmult" value="1.5" oninput="calc()"></div>
+                <div class="field" style="margin:0"><label class="lab">Yuvarlama</label><select id="p_round" onchange="calc()"><option value="90">…,90</option><option value="99">…,99</option><option value="int">tam</option><option value="none">yok</option></select></div>
               </div>
+              <button class="btn primary small" style="margin-top:12px" onclick="applyPrice()">Bu fiyatları uygula</button>
             </div>
           </div>
 
@@ -537,7 +549,12 @@ HTML = """<!doctype html>
     <h3>Ayarlar</h3>
     <div class="sub">Bilgiler yalnızca senin bilgisayarında <code>config.json</code> dosyasında saklanır.</div>
     <div class="field"><label class="lab">Shopify mağaza adresi</label><input id="c_store" placeholder="magazam.myshopify.com"></div>
-    <div class="field"><label class="lab">Shopify Admin API token (shpat_…)</label><input id="c_token" placeholder="shpat_..." type="password"></div>
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--cyan);margin:0 0 8px;line-height:1.5">Dev Dashboard (2026): Client ID + Gizli anahtarı gir; token'ı araç otomatik üretir.</div>
+    <div class="grid2">
+      <div class="field"><label class="lab">Client ID</label><input id="c_client_id" placeholder="Dev Dashboard → Client ID"></div>
+      <div class="field"><label class="lab">Gizli anahtar (Client secret)</label><input id="c_client_secret" placeholder="Gizli anahtar" type="password"></div>
+    </div>
+    <div class="field"><label class="lab">veya doğrudan Admin API token (eski yöntem, varsa)</label><input id="c_token" placeholder="shpat_..." type="password"></div>
     <div class="row"><button class="btn ghost small" onclick="testShopify()">Bağlantıyı test et</button><span class="testline" id="testline"></span></div>
     <div class="field" style="margin-top:16px"><label class="lab">Anthropic API anahtarı (AI düzenleme için)</label><input id="c_key" placeholder="sk-ant-..." type="password"></div>
     <div class="field"><label class="lab">Model</label><input id="c_model" placeholder="claude-sonnet-5"></div>
@@ -565,7 +582,7 @@ HTML = """<!doctype html>
 
 <script>
 const $=id=>document.getElementById(id);
-let P={title:"",price:"",currency:"TRY",description:"",images:[],vendor:"",sku:"",tags:[],specs:[],seo:{},body_html:""};
+let P={title:"",price:"",currency:"TRY",description:"",images:[],vendor:"",sku:"",tags:[],specs:[],seo:{},body_html:"",compare_at_price:""};
 let pubStatus="draft";
 function toast(m){const t=$("toast");t.textContent=m;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),2300);}
 function stat(m,e){const s=$("status");s.className="statusline"+(e?" err":"");s.innerHTML=m;}
@@ -580,6 +597,7 @@ async function loadConfig(){
     $("chipShop").className="chip "+(c.shopify_ready?"on":"off");
     $("chipAI").className="chip "+(c.ai_ready?"on":"off");
     $("c_store").value=c.shopify_store||"";$("c_model").value=c.model||"claude-sonnet-5";
+    $("c_client_id").value=c.shopify_client_id||"";
     $("c_store_name").value=c.store_name||"";$("c_guarantee").value=c.trust_guarantee||"";
     $("c_shipping").value=c.trust_shipping||"";$("c_returns").value=c.trust_returns||"";
     $("c_payment").value=c.trust_payment||"";
@@ -592,14 +610,19 @@ async function saveSettings(){
     store_name:$("c_store_name").value,trust_guarantee:$("c_guarantee").value,
     trust_shipping:$("c_shipping").value,trust_returns:$("c_returns").value,trust_payment:$("c_payment").value};
   if($("c_token").value)body.shopify_token=$("c_token").value;
+  if($("c_client_id").value)body.shopify_client_id=$("c_client_id").value;
+  if($("c_client_secret").value)body.shopify_client_secret=$("c_client_secret").value;
   if($("c_key").value)body.anthropic_key=$("c_key").value;
   await fetch("/api/settings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
-  toast("Ayarlar kaydedildi ✓");$("c_token").value="";$("c_key").value="";closeSettings();loadConfig();
+  toast("Ayarlar kaydedildi ✓");$("c_token").value="";$("c_key").value="";$("c_client_secret").value="";closeSettings();loadConfig();
 }
 async function testShopify(){
   $("testline").textContent="test ediliyor…";
-  if($("c_store").value||$("c_token").value){
-    const b={shopify_store:$("c_store").value};if($("c_token").value)b.shopify_token=$("c_token").value;
+  {
+    const b={shopify_store:$("c_store").value};
+    if($("c_token").value)b.shopify_token=$("c_token").value;
+    if($("c_client_id").value)b.shopify_client_id=$("c_client_id").value;
+    if($("c_client_secret").value)b.shopify_client_secret=$("c_client_secret").value;
     await fetch("/api/settings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b)});
   }
   try{const r=await (await fetch("/api/test-shopify",{method:"POST"})).json();
@@ -619,7 +642,7 @@ async function doFetch(){
     if(!r.ok){stat("✗ "+(d.error||"Çekilemedi"),true);return;}
     P={title:d.title||"",price:d.price||"",currency:d.currency||"TRY",description:d.description||"",
        images:(d.images||[]).map(s=>({src:s,use:true})),vendor:d.vendor||"",sku:d.sku||"",
-       tags:d.tags||[],specs:d.specs||[],seo:{},body_html:""};
+       tags:d.tags||[],specs:d.specs||[],seo:{},body_html:"",compare_at_price:""};
     $("proWrap").style.display="none";$("proPreview").innerHTML="";
     fill();$("workspace").classList.add("on");
     stat("Ürün hazır. Aşağıda düzenleyip mağazana gönder.");
@@ -667,19 +690,31 @@ function addImgUrl(){const u=$("addimg").value.trim();if(!u.startsWith("http"))r
 
 /* ---- pricing ---- */
 function num(v){v=parseFloat(String(v).replace(",","."));return isNaN(v)?0:v;}
+function roundP(x,mode){if(mode==="int")return Math.round(x);if(mode==="90")return Math.max(0,Math.ceil(x)-0.10);if(mode==="99")return Math.max(0,Math.ceil(x)-0.01);return x;}
 function calc(){
-  const cost=num($("p_cost").value),fx=num($("p_fx").value)||1,margin=num($("p_margin").value),
-        add=num($("p_add").value),round=$("p_round").value,cur=$("p_srccur").value;
-  let base=cost*(cur==="TRY"?1:fx);
-  let out=base*(1+margin/100)+add;
-  if(round==="int")out=Math.round(out);
-  else if(round==="90")out=Math.max(0,Math.ceil(out)-0.10);
-  else if(round==="99")out=Math.max(0,Math.ceil(out)-0.01);
-  P._final=out;
-  $("p_final").textContent="₺"+out.toFixed(2);
-  $("p_break").textContent=`taban ₺${base.toFixed(2)} × %${margin} kâr${add?` + ₺${add}`:""}`;
+  const cost=num($("p_cost").value),fx=num($("p_fx").value)||1,cur=$("p_srccur").value,ship=num($("p_ship").value);
+  const pay=num($("p_pay").value)/100,plat=num($("p_platform").value)/100,ad=num($("p_ad").value)/100,
+        ret=num($("p_return").value)/100,vat=num($("p_vat").value)/100,margin=num($("p_margin").value)/100;
+  const vatInc=$("p_vatinc").checked;
+  const C=cost*(cur==="TRY"?1:fx)+ship;
+  const vatFrac=vatInc?(vat/(1+vat)):0;
+  const S=pay+plat+ad+ret+vatFrac, denom=1-S-margin;
+  const bd=$("p_breakdown");
+  if(denom<=0){$("p_final").textContent="—";bd.innerHTML='<span style="color:var(--coral)">Maliyet + kesintiler + hedef kâr %100\'ü aşıyor. Reklam/kâr oranını düşür.</span>';P._final=0;P._comp=0;return;}
+  const Pr=roundP(C/denom,$("p_round").value);P._final=Pr;
+  const vatAmt=Pr*vatFrac,payAmt=Pr*pay,platAmt=Pr*plat,adAmt=Pr*ad,retAmt=Pr*ret;
+  const net=Pr-C-vatAmt-payAmt-platAmt-adAmt-retAmt, netPct=Pr>0?net/Pr*100:0;
+  const beforeAds=Pr-C-vatAmt-payAmt-platAmt-retAmt, beRoas=(adAmt>0&&beforeAds>0)?Pr/beforeAds:0;
+  const comp=roundP(Pr*(num($("p_compmult").value)||1),$("p_round").value);P._comp=comp>Pr?comp:0;
+  const f=v=>"₺"+v.toFixed(2);
+  $("p_final").textContent=f(Pr);
+  bd.innerHTML="Maliyet (ürün+kargo): "+f(C)+"<br>"+(vatInc?("KDV: "+f(vatAmt)+"<br>"):"")+
+    "Ödeme komisyonu: "+f(payAmt)+"<br>Platform/işlem: "+f(platAmt)+"<br>Reklam payı: "+f(adAmt)+"<br>İade/kayıp: "+f(retAmt)+"<br>"+
+    "<span style='color:var(--ok)'>NET KÂR: "+f(net)+"  (%"+netPct.toFixed(1)+")</span>"+
+    (P._comp?("<br>Karşılaştırma (üstü çizili): "+f(P._comp)):"")+
+    (beRoas>0?("<br>Başabaş ROAS: "+beRoas.toFixed(2)+"x — reklamın bunun üstünde dönerse kârdasın"):"");
 }
-function applyPrice(){P.price=(P._final||0).toFixed(2);P.currency="TRY";toast("Fiyat uygulandı ✓");sync();}
+function applyPrice(){P.price=(P._final||0).toFixed(2);P.compare_at_price=P._comp?P._comp.toFixed(2):"";P.currency="TRY";toast("Fiyatlar uygulandı ✓");sync();}
 
 /* ---- collect + preview ---- */
 function collect(){
@@ -694,7 +729,9 @@ function sync(){
   collect();collectSeo();
   $("v_title").textContent=P.title||"—";
   const sym={TRY:"₺",USD:"$",EUR:"€",GBP:"£"}[P.currency]||P.currency+" ";
-  $("v_price").textContent=P.price?(sym+P.price):"—";
+  let ph=P.price?(sym+P.price):"—";
+  if(P.compare_at_price)ph='<span style="text-decoration:line-through;color:var(--mute);font-size:15px;margin-right:8px">'+sym+P.compare_at_price+'</span>'+ph;
+  $("v_price").innerHTML=ph;
   $("v_desc").textContent=P.description||"";
   const first=P.images.find(x=>x.use);
   const im=$("v_img");
@@ -754,7 +791,7 @@ async function aiListing(){
 function setPubStatus(v,el){pubStatus=v;document.querySelectorAll("#statusSeg button").forEach(x=>x.classList.remove("on"));el.classList.add("on");}
 async function doPush(){
   collect();collectSeo();
-  const out={title:P.title,description:P.description,body_html:P.body_html||"",price:P.price,vendor:P.vendor,sku:P.sku,
+  const out={title:P.title,description:P.description,body_html:P.body_html||"",price:P.price,compare_at_price:P.compare_at_price||"",vendor:P.vendor,sku:P.sku,
     tags:P.tags,status:pubStatus,inventory:$("f_inv").value,seo:P.seo,
     images:P.images.filter(x=>x.use).map(x=>x.src)};
   if(!out.title)return toast("Başlık boş olamaz");
@@ -788,6 +825,8 @@ def load_config():
             cfg = {}
     # config.json'da değer boşsa ortam değişkeninden doldur (host'ta kalıcılık için)
     env_map = {"shopify_store": "SHOPIFY_STORE", "shopify_token": "SHOPIFY_TOKEN",
+               "shopify_client_id": "SHOPIFY_CLIENT_ID",
+               "shopify_client_secret": "SHOPIFY_CLIENT_SECRET",
                "anthropic_key": "ANTHROPIC_API_KEY", "model": "ANTHROPIC_MODEL"}
     for key, env in env_map.items():
         if not cfg.get(key):
@@ -809,6 +848,36 @@ def norm_store(store):
         if "." not in store:
             store = store + ".myshopify.com"
     return store
+
+
+def get_shopify_token(cfg):
+    """Doğrudan Admin API token varsa onu kullanır; yoksa Dev Dashboard'ın
+    Client ID + Gizli anahtarıyla (client_credentials) taze bir token üretir.
+    Bu token'lar 24 saat geçerli olduğu için her ihtiyaçta yeniden alınır."""
+    token = cfg.get("shopify_token")
+    if token:
+        return token, None
+    store = norm_store(cfg.get("shopify_store"))
+    cid = cfg.get("shopify_client_id")
+    csec = cfg.get("shopify_client_secret")
+    if not (store and cid and csec):
+        return None, "Shopify bilgileri eksik (mağaza + Client ID + Gizli anahtar)."
+    try:
+        r = requests.post(
+            f"https://{store}/admin/oauth/access_token",
+            data={"client_id": cid, "client_secret": csec,
+                  "grant_type": "client_credentials"},
+            headers={"Accept": "application/json"}, timeout=25)
+    except Exception as e:
+        return None, f"Token sunucusuna bağlanılamadı: {e}"
+    if r.status_code != 200:
+        return None, (f"Token alınamadı ({r.status_code}). "
+                      "Client ID/gizli anahtarı ve uygulamanın mağazana KURULU olduğunu kontrol et. "
+                      f"Ayrıntı: {r.text[:160]}")
+    tok = r.json().get("access_token")
+    if not tok:
+        return None, "Shopify token döndürmedi."
+    return tok, None
 
 
 # ----------------------------- extraction -----------------------------
@@ -1063,6 +1132,13 @@ def api_ai():
 
 
 # ----------------------------- Shopify push -----------------------------
+def shopify_graphql(store, token, query, variables=None):
+    return requests.post(
+        f"https://{store}/admin/api/{SHOPIFY_API_VERSION}/graphql.json",
+        headers={"X-Shopify-Access-Token": token, "Content-Type": "application/json"},
+        json={"query": query, "variables": variables or {}}, timeout=40)
+
+
 def desc_html(product):
     lines = [l for l in (product.get("description") or "").split("\n") if l.strip()]
     html = "".join(f"<p>{_html.escape(l)}</p>" for l in lines)
@@ -1078,65 +1154,97 @@ def desc_html(product):
 def api_push():
     cfg = load_config()
     store = norm_store(cfg.get("shopify_store"))
-    token = cfg.get("shopify_token")
+    token, err = get_shopify_token(cfg)
     if not store or not token:
-        return jsonify({"error": "Shopify bağlantısı ayarlı değil (Ayarlar'dan mağaza + token gir)."}), 400
+        return jsonify({"error": err or "Shopify bağlantısı ayarlı değil (Ayarlar'dan gir)."}), 400
 
     product = request.json or {}
-    images = [{"src": s} for s in product.get("images", []) if s]
-    variant = {"price": product.get("price") or "0.00"}
-    if product.get("sku"):
-        variant["sku"] = product["sku"]
-    qty = product.get("inventory")
-    if qty not in (None, ""):
-        variant["inventory_management"] = "shopify"
-        try:
-            variant["inventory_quantity"] = int(qty)
-        except Exception:
-            pass
-
     body_html = product.get("body_html") or desc_html(product)
-    payload = {"product": {
-        "title": product.get("title") or "Adsız ürün",
-        "body_html": body_html,
-        "vendor": product.get("vendor", ""),
-        "tags": ", ".join(product.get("tags", [])),
-        "status": "active" if product.get("status") == "active" else "draft",
-        "variants": [variant],
-        "images": images,
-    }}
+    status = "ACTIVE" if product.get("status") == "active" else "DRAFT"
     meta = product.get("seo") or {}
-    if meta.get("handle"):
-        payload["product"]["handle"] = meta["handle"]
 
-    url = f"https://{store}/admin/api/{SHOPIFY_API_VERSION}/products.json"
+    # 1) ürünü oluştur (GraphQL Admin API)
+    create_q = """
+    mutation productCreate($input: ProductInput!) {
+      productCreate(input: $input) {
+        product { id title variants(first: 1) { edges { node { id } } } }
+        userErrors { field message }
+      }
+    }"""
+    pinput = {
+        "title": product.get("title") or "Adsız ürün",
+        "descriptionHtml": body_html,
+        "vendor": product.get("vendor", "") or "",
+        "status": status,
+    }
+    if product.get("tags"):
+        pinput["tags"] = product["tags"]
+    if meta.get("seo_title") or meta.get("meta_description"):
+        pinput["seo"] = {"title": meta.get("seo_title", ""),
+                         "description": meta.get("meta_description", "")}
+    if meta.get("handle"):
+        pinput["handle"] = meta["handle"]
+
     try:
-        r = requests.post(url, headers={"X-Shopify-Access-Token": token,
-                                        "Content-Type": "application/json"},
-                          json=payload, timeout=40)
+        r = shopify_graphql(store, token, create_q, {"input": pinput})
     except Exception as e:
         return jsonify({"error": f"Shopify'a bağlanılamadı: {e}"}), 502
+    if r.status_code == 401:
+        return jsonify({"error": "401 — token reddedildi. Uygulamanın mağazana KURULU ve "
+                                 "'write_products' izninin ekli olduğundan emin ol."}), 400
+    if r.status_code != 200:
+        return jsonify({"error": f"Shopify {r.status_code}: {r.text[:200]}"}), 400
+    jr = r.json()
+    if jr.get("errors"):
+        return jsonify({"error": str(jr["errors"])[:250]}), 400
+    pc = jr.get("data", {}).get("productCreate", {})
+    if pc.get("userErrors"):
+        return jsonify({"error": "; ".join(u["message"] for u in pc["userErrors"])}), 400
+    prod = pc.get("product") or {}
+    pid = prod.get("id")
+    if not pid:
+        return jsonify({"error": "Ürün oluşturulamadı (kimlik dönmedi)."}), 400
+    edges = prod.get("variants", {}).get("edges", [])
+    variant_id = edges[0]["node"]["id"] if edges else None
 
-    if r.status_code not in (200, 201):
-        return jsonify({"error": f"Shopify reddetti ({r.status_code}): {r.text[:300]}"}), 400
-
-    created = r.json().get("product", {})
-    pid = created.get("id")
-    admin_link = f"https://{store}/admin/products/{pid}" if pid else ""
-    # SEO meta alanlarını (title/description) ayrıca yaz
-    if pid and meta.get("seo_title"):
+    # 2) fiyat + karşılaştırma fiyatı + SKU
+    if variant_id:
+        vin = {"id": variant_id, "price": str(product.get("price") or "0.00")}
+        if product.get("compare_at_price"):
+            vin["compareAtPrice"] = str(product["compare_at_price"])
+        if product.get("sku"):
+            vin["inventoryItem"] = {"sku": product["sku"]}
+        vq = """
+        mutation vbu($productId: ID!, $variants: [ProductVariantsBulkInput!]!) {
+          productVariantsBulkUpdate(productId: $productId, variants: $variants) {
+            userErrors { field message }
+          }
+        }"""
         try:
-            requests.put(
-                f"https://{store}/admin/api/{SHOPIFY_API_VERSION}/products/{pid}.json",
-                headers={"X-Shopify-Access-Token": token, "Content-Type": "application/json"},
-                json={"product": {"id": pid,
-                                  "metafields_global_title_tag": meta.get("seo_title", ""),
-                                  "metafields_global_description_tag": meta.get("meta_description", "")}},
-                timeout=30)
+            shopify_graphql(store, token, vq, {"productId": pid, "variants": [vin]})
         except Exception:
             pass
-    return jsonify({"ok": True, "id": pid, "admin_link": admin_link,
-                    "title": created.get("title", "")})
+
+    # 3) görseller (URL'den)
+    imgs = [s for s in product.get("images", []) if s]
+    if imgs:
+        mq = """
+        mutation cm($productId: ID!, $media: [CreateMediaInput!]!) {
+          productCreateMedia(productId: $productId, media: $media) {
+            mediaUserErrors { field message }
+          }
+        }"""
+        media = [{"originalSource": s, "mediaContentType": "IMAGE"} for s in imgs]
+        try:
+            shopify_graphql(store, token, mq, {"productId": pid, "media": media})
+        except Exception:
+            pass
+
+    numeric_id = pid.split("/")[-1]
+    shop_name = store.replace(".myshopify.com", "")
+    admin_link = f"https://admin.shopify.com/store/{shop_name}/products/{numeric_id}"
+    return jsonify({"ok": True, "id": numeric_id, "admin_link": admin_link,
+                    "title": prod.get("title", "")})
 
 
 # ----------------------------- settings & test -----------------------------
@@ -1144,9 +1252,11 @@ def api_push():
 def api_config():
     cfg = load_config()
     return jsonify({
-        "shopify_ready": bool(norm_store(cfg.get("shopify_store")) and cfg.get("shopify_token")),
+        "shopify_ready": bool(norm_store(cfg.get("shopify_store")) and (
+            cfg.get("shopify_token") or (cfg.get("shopify_client_id") and cfg.get("shopify_client_secret")))),
         "ai_ready": bool(cfg.get("anthropic_key")),
         "shopify_store": cfg.get("shopify_store", ""),
+        "shopify_client_id": cfg.get("shopify_client_id", ""),
         "model": cfg.get("model", DEFAULT_MODEL),
         "store_name": cfg.get("store_name", ""),
         "trust_guarantee": cfg.get("trust_guarantee", ""),
@@ -1160,7 +1270,8 @@ def api_config():
 def api_settings():
     data = request.json or {}
     cfg = load_config()
-    for k in ["shopify_store", "shopify_token", "anthropic_key", "model",
+    for k in ["shopify_store", "shopify_token", "shopify_client_id", "shopify_client_secret",
+              "anthropic_key", "model",
               "store_name", "trust_guarantee", "trust_shipping", "trust_returns", "trust_payment"]:
         if k in data and str(data[k]).strip() != "":
             cfg[k] = str(data[k]).strip()
@@ -1174,18 +1285,23 @@ def api_settings():
 def api_test_shopify():
     cfg = load_config()
     store = norm_store(cfg.get("shopify_store"))
-    token = cfg.get("shopify_token")
+    token, err = get_shopify_token(cfg)
     if not store or not token:
-        return jsonify({"ok": False, "error": "Mağaza adı veya token eksik."})
+        return jsonify({"ok": False, "error": err or "Mağaza adı veya kimlik bilgisi eksik."})
     try:
-        r = requests.get(f"https://{store}/admin/api/{SHOPIFY_API_VERSION}/shop.json",
-                         headers={"X-Shopify-Access-Token": token}, timeout=20)
-        if r.status_code == 200:
-            name = r.json().get("shop", {}).get("name", store)
-            return jsonify({"ok": True, "name": name})
-        return jsonify({"ok": False, "error": f"Shopify {r.status_code}: {r.text[:160]}"})
+        r = shopify_graphql(store, token, "{ shop { name } }")
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)})
+    if r.status_code == 401:
+        return jsonify({"ok": False, "error": "401 — token reddedildi. Uygulama mağazana KURULU mu ve "
+                                              "'write_products' izni ekli mi? Kontrol et."})
+    if r.status_code != 200:
+        return jsonify({"ok": False, "error": f"Shopify {r.status_code}: {r.text[:160]}"})
+    jr = r.json()
+    if jr.get("errors"):
+        return jsonify({"ok": False, "error": str(jr["errors"])[:180]})
+    name = (jr.get("data", {}).get("shop") or {}).get("name", store)
+    return jsonify({"ok": True, "name": name})
 
 
 # ----------------------------- erişim koruması -----------------------------
