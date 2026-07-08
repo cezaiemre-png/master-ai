@@ -1032,19 +1032,57 @@ def api_fetch():
     url = (request.json or {}).get("url", "").strip()
     if not url.startswith("http"):
         return jsonify({"error": "Geçerli bir bağlantı gir (http/https ile başlamalı)."}), 400
+
+    # 1) Shopify ürünü ise gizli .json kapısından TÜM görselleri + fiyatı çek
+    sj = try_shopify_json(url)
+    if sj:
+        return jsonify(sj)
+
+    # 2) Normal HTML çekme + çözümleme
     try:
         r = requests.get(url, headers={"User-Agent": UA, "Accept-Language": "tr,en;q=0.8"},
                          timeout=25)
         r.raise_for_status()
     except Exception as e:
         return jsonify({"error": f"Sayfa çekilemedi: {e}"}), 502
-    # charset'i doğru algıla (başlık yoksa içeriğe bak), Türkçe karakter bozulmasın
     if not r.encoding or r.encoding.lower() in ("iso-8859-1", "latin-1", "ascii"):
         r.encoding = r.apparent_encoding or "utf-8"
     product = parse_product(r.content, url)
     if not product["title"] and not product["images"]:
         return jsonify({"error": "Bu sayfada ürün bilgisi bulunamadı. Bağlantı bir ürün sayfası mı?"}), 422
     return jsonify(product)
+
+
+def try_shopify_json(url):
+    """Shopify ürün sayfaları /products/<handle>.json ile tüm veriyi verir."""
+    if "/products/" not in url:
+        return None
+    base = url.split("?")[0].split("#")[0].rstrip("/")
+    if base.endswith(".json"):
+        json_url = base
+    else:
+        json_url = base + ".json"
+    try:
+        r = requests.get(json_url, headers={"User-Agent": UA}, timeout=20)
+        if r.status_code != 200 or "application/json" not in r.headers.get("content-type", ""):
+            return None
+        prod = r.json().get("product")
+        if not prod:
+            return None
+    except Exception:
+        return None
+    imgs = []
+    for im in prod.get("images", []):
+        s = im.get("src")
+        if s:
+            imgs.append(s.split("?")[0])
+    variants = prod.get("variants", [])
+    price = variants[0].get("price", "") if variants else ""
+    desc = _clean_text(prod.get("body_html", ""))
+    return {"title": prod.get("title", ""), "price": _num(price), "currency": "TRY",
+            "description": desc, "images": imgs[:20], "vendor": prod.get("vendor", ""),
+            "sku": (variants[0].get("sku", "") if variants else ""), "tags": [], "specs": [],
+            "source_url": url}
 
 
 # ----------------------------- AI -----------------------------
